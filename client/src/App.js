@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import useSWR, { mutate } from 'swr'
 
 const fetcher = (...args) => fetch(...args).then(res => res.json())
