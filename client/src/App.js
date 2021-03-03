@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react'
+import useSWR, { mutate } from 'swr'
+
+const fetcher = (...args) => fetch(...args).then(res => res.json())
 
 function App() {
-  const [users, setUsers] = useState([])
-  useEffect(() => {
-    fetch('/api/users')
-      .then(res => res.json())
-      .then(data => setUsers(data))
-  }, [])
+  const { data: users, error } = useSWR('/api/users', fetcher)
+
   return (
     <div>
       <form onSubmit={handleSubmit}>
@@ -17,25 +16,26 @@ function App() {
         </label>
         <button>Add user</button>
       </form>
-      <ul>
-        {users.map(user => (
-          <li key={user._id}>{user.name}</li>
-        ))}
-      </ul>
+      {error || !users || (
+        <ul>
+          {users.map(user => (
+            <li key={user._id}>{user.name}</li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
-    fetch('/api/users', {
+    const newUser = { name: event.target.elements.name.value }
+    mutate('/api/users', [...users, newUser], false)
+    await fetch('/api/users', {
       method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({ name: event.target.elements.name.value }),
-    })
-      .then(res => res.json())
-      .then(data => setUsers([...users, data]))
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(newUser),
+    }).then(res => res.json())
+    mutate('/api/users')
   }
 }
 
