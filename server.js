@@ -1,11 +1,15 @@
 const chalk = require('chalk')
 const express = require('express')
 const mongoose = require('mongoose')
+require('dotenv').config()
+
 const Card = require('./models/Card')
 const User = require('./models/User')
 
+const { PORT, MONGODB } = process.env
+
 mongoose
-  .connect('mongodb://localhost/lean-coffee-board', {
+  .connect(MONGODB, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
@@ -67,6 +71,6 @@ app.use((err, req, res, next) => {
   res.status(400).json({ ERROR: err.message })
 })
 
-app.listen(3000, () => {
-  console.log('Server started at http://localhost:3000')
+app.listen(PORT, () => {
+  console.log(`Server started at http://localhost:${PORT}`)
 })
