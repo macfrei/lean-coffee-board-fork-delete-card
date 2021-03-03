@@ -17,6 +17,7 @@ mongoose
   .catch(error => console.error('Could not connect to mongodb', error))
 
 const app = express()
+app.use(express.static('client/build', { dotfiles: 'deny' }))
 app.use(express.json())
 
 app.get('/api/users', async (req, res, next) => {
