@@ -19,8 +19,8 @@ function App() {
     event.preventDefault()
     const form = event.target
     const { text, author } = form.elements
-    createCard({ text: text.value, author: author.value }).then(() =>
-      getCards().then(data => setCards([...data]))
+    createCard({ text: text.value, author: author.value }).then(newCard =>
+      setCards([newCard, ...cards])
     )
   }
 
