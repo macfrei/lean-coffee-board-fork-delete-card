@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import styled from 'styled-components/macro'
-import saveToLocal from '../lib/saveToLocal'
+import deleteCard from '../services/deleteCard'
 import getCards from '../services/getCards'
 import postCard from '../services/postCard'
 import Button from './Button'
@@ -47,7 +47,10 @@ export default function Board({ user, onLogout }) {
   }
 
   function handleDelete(id) {
-    console.log(id)
+    deleteCard(id).then(() => {
+      const updatedCards = cards.filter(card => card._id !== id)
+      setCards([...updatedCards])
+    })
   }
 }
 
