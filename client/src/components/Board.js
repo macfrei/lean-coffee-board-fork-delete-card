@@ -1,9 +1,20 @@
+import PropTypes from 'prop-types'
 import { useEffect, useState } from 'react'
 import styled from 'styled-components/macro'
-import saveToLocal from '../lib/saveToLocal'
+import deleteCard from '../services/deleteCard'
 import getCards from '../services/getCards'
 import postCard from '../services/postCard'
+import voteCard from '../services/voteCard'
 import Button from './Button'
+import Card from './Card'
+
+Board.propTypes = {
+  user: PropTypes.shape({
+    name: PropTypes.string,
+    _id: PropTypes.string,
+  }),
+  onLogout: PropTypes.func,
+}
 
 export default function Board({ user, onLogout }) {
   const [cards, setCards] = useState([])
@@ -16,12 +27,19 @@ export default function Board({ user, onLogout }) {
     <BoardWrapper>
       <Logout onClick={onLogout} />
       <CardGrid>
-        {cards.map(card => (
-          <Card key={card._id} authorColor={card.author?.color}>
-            {card.text || <em>No comment</em>}
-            <div>{card.author?.name}</div>
-          </Card>
-        ))}
+        {cards
+          .sort((a, b) => b.votes - a.votes)
+          .map((card, index) => (
+            <Card
+              key={card._id}
+              authorColor={card.author?.color}
+              text={card.text}
+              name={card.author?.name}
+              votes={card.votes}
+              onDelete={() => handleDelete(card._id)}
+              onVote={() => handleVote(index)}
+            />
+          ))}
         <Spacer />
       </CardGrid>
       <Form onSubmit={handleSubmit}>
@@ -30,6 +48,23 @@ export default function Board({ user, onLogout }) {
       </Form>
     </BoardWrapper>
   )
+
+  function handleVote(index) {
+    const card = cards[index]
+
+    // optimistic update
+    setCards([
+      ...cards.slice(0, index),
+      { ...card, votes: card.votes + 1 },
+      ...cards.slice(index + 1),
+    ])
+
+    // we use finally here to get the cards in both cases: if the update returned
+    // successfully or with an error:
+    voteCard(card._id).finally(() => {
+      getCards().then(cards => setCards(cards))
+    })
+  }
 
   function handleSubmit(event) {
     event.preventDefault()
@@ -40,6 +75,13 @@ export default function Board({ user, onLogout }) {
     )
     form.reset()
     text.focus()
+  }
+
+  function handleDelete(id) {
+    deleteCard(id).then(() => {
+      const updatedCards = cards.filter(card => card._id !== id)
+      setCards([...updatedCards])
+    })
   }
 }
 
@@ -64,25 +106,11 @@ const CardGrid = styled.ul`
   display: grid;
   gap: 20px;
   grid-template-columns: repeat(auto-fit, minmax(240px, 400px));
-  grid-auto-rows: 100px;
+  align-content: start;
+  /* grid-auto-rows: 100px; */
   margin: 0;
   padding: 20px;
   overflow-y: auto;
-`
-
-const Card = styled.li`
-  display: grid;
-  align-content: space-between;
-  border-radius: 4px;
-  padding: 20px 20px 10px 20px;
-  background: linear-gradient(#eee, #efefef);
-
-  div {
-    text-transform: uppercase;
-    font-size: 0.8em;
-    text-align: end;
-    color: ${p => p.authorColor};
-  }
 `
 
 const Spacer = styled.li.attrs(() => ({ ariaHidden: 'true' }))`
